@@ -59,79 +59,113 @@ T_Eff_map = [
 %% --- RYSOWANIE CHARAKTERYSTYK (MATLAB) ---
 
 % Ustawienia ogólne wykresów
+set(0, 'DefaultLineLineWidth', 1.5);
+set(0, 'DefaultAxesFontSize', 10);
 colors = lines(length(C_Nc_vec)); % Generowanie palety kolorów dla linii obrotów
 
 %% 1. WYKRESY 2D - SPRĘŻARKA
-hfig1 = figure('Name', 'compressor pr', 'Color', 'w');
+figure('Name', 'Charakterystyki Sprężarki (2D)', 'Color', 'w');
 
 % A) Mapa Pracy (Spręż vs Przepływ)
-hold on;
-%grid on;
-xlabel('Corrected air flow ($W_{corr}$)');
-ylabel('Preasure ratio ($\pi_c$)');
+subplot(1, 2, 1); hold on; grid on;
+title('Mapa Pracy Sprężarki');
+xlabel('Skorygowany przepływ masy (W_{corr})');
+ylabel('Spręż (PR)');
 
 % Rysowanie linii stałych obrotów (Speed lines)
 for i = 1:length(C_Nc_vec)
     plot(C_Wc_map(i, :), C_PR_map(i, :), '-o', ...
         'Color', colors(i, :), ...
-        'DisplayName', ['$n_{corr} = $' num2str(C_Nc_vec(i))]);
+        'DisplayName', ['n_{corr} = ' num2str(C_Nc_vec(i))]);
 end
 
-
 % Rysowanie Linii Pompażu (Surge Line) - punkty dla Beta=0 (pierwsza kolumna)
-plot(C_Wc_map(:, 1), C_PR_map(:, 1), '--r', 'LineWidth', 2, 'DisplayName', 'Surge line');
+plot(C_Wc_map(:, 1), C_PR_map(:, 1), '--r', 'LineWidth', 2, 'DisplayName', 'Linia Pompażu');
 legend('Location', 'best');
-hold off;
 
-hfig2 = figure('Name', 'compressor eta', 'Color', 'w');
 % B) Mapa Sprawności (Sprawność vs Przepływ)
-hold on;
-grid on;
-xlabel('Corrected air flow ($W_{corr}$)');
-ylabel('Compressor efficiency ($\eta$)');
+subplot(1, 2, 2); hold on; grid on;
+title('Sprawność Sprężarki');
+xlabel('Skorygowany przepływ masy (W_{corr})');
+ylabel('Sprawność adiabatyczna (\eta)');
 
 for i = 1:length(C_Nc_vec)
     plot(C_Wc_map(i, :), C_Eff_map(i, :), '-o', ...
         'Color', colors(i, :), ...
-        'DisplayName', ['$n_{corr}$ = ' num2str(C_Nc_vec(i))]);
+        'DisplayName', ['n_{corr} = ' num2str(C_Nc_vec(i))]);
 end
 legend('Location', 'best');
-hold off;
 
 %% 2. WYKRESY 2D - TURBINA
-hfig3 = figure('Name', 'Charakterystyki Turbiny W_corr', 'Color', 'w');
+figure('Name', 'Charakterystyki Turbiny (2D)', 'Color', 'w');
 
 % A) Charakterystyka przepływowa (Przepływ vs Spręż)
-hold on;
-grid on;
-xlabel('Turbine presure ratio ($\pi_t$)');
-ylabel('Corrected exhaust gas flow  ($W_{corr}$)');
+subplot(1, 2, 1); hold on; grid on;
+title('Charakterystyka Przepływowa Turbiny');
+xlabel('Spręż Turbiny (PR)');
+ylabel('Skorygowany przepływ masy (W_{corr})');
 
 % Oś X dla turbiny jest stała (T_PR_vec), oś Y się zmienia (T_Wc_map)
 for i = 1:length(T_Nc_vec)
     plot(T_PR_vec, T_Wc_map(i, :), '-s', ...
         'Color', colors(i, :), ...
-        'DisplayName', ['$n_{corr}$ = ' num2str(T_Nc_vec(i))]);
+        'DisplayName', ['n_{corr} = ' num2str(T_Nc_vec(i))]);
 end
 legend('Location', 'best');
-hold off;
 
-hfig4 = figure('Name', 'Charakterystyki Turbiny eta', 'Color', 'w');
 % B) Sprawność Turbiny (Sprawność vs Spręż)
-hold on;
-grid on;
-xlabel('Turbine presure ratio ($\pi_t$)');
-ylabel('Turbine efficiency ($\eta$)');
+subplot(1, 2, 2); hold on; grid on;
+title('Sprawność Turbiny');
+xlabel('Spręż Turbiny (PR)');
+ylabel('Sprawność (\eta)');
 
 for i = 1:length(T_Nc_vec)
     plot(T_PR_vec, T_Eff_map(i, :), '-s', ...
         'Color', colors(i, :), ...
-        'DisplayName', ['$n_{corr}$ = ' num2str(T_Nc_vec(i))]);
+        'DisplayName', ['n_{corr} = ' num2str(T_Nc_vec(i))]);
 end
 legend('Location', 'best');
-hold off;
 
-hfig = [hfig1, hfig2, hfig3, hfig4];
+%% 3. WIZUALIZACJA 3D (POWIERZCHNIE)
+figure('Name', 'Mapy 3D Sprawności spręzarki', 'Color', 'w');
+
+% Używamy surf do wyrysowania powierzchni
+surf(C_Wc_map, C_PR_map, C_Eff_map, 'FaceAlpha', 0.8);
+title('Sprężarka: Powierzchnia Sprawności');
+xlabel('Przepływ (W_{corr})');
+ylabel('Spręż (PR)');
+zlabel('Sprawność (\eta)');
+colormap(jet); colorbar;
+view(-30, 30); % Ustawienie kąta kamery
+grid on;
+
+figure('Name', 'Mapy 3D Sprawności spręzarki', 'Color', 'w');
+% B) Powierzchnia Sprawności Turbiny
+% Dla turbiny musimy stworzyć siatkę dla osi X (PR), bo T_PR_vec to wektor
+[T_PR_grid, T_Nc_grid] = meshgrid(T_PR_vec, T_Nc_vec);
+
+% Rysujemy: Oś X=PR, Oś Y=Przepływ, Oś Z=Sprawność
+surf(T_PR_grid, T_Wc_map, T_Eff_map, 'FaceAlpha', 0.8);
+title('Turbina: Powierzchnia Sprawności');
+xlabel('Spręż (PR)');
+ylabel('Przepływ (W_{corr})');
+zlabel('Sprawność (\eta)');
+colormap(jet); colorbar;
+view(30, 30);
+grid on;
+
+hfig1 = figure;
+for i = 1:length(C_Nc_vec)
+    plot(C_Wc_map(i, :), C_PR_map(i, :), '-o', ...
+        'Color', colors(i, :), ...
+        'DisplayName', ['n_{corr} = ' num2str(C_Nc_vec(i))]);
+end
+plot(V_digitalized,p_digitalized, LineWidth=1.5);
+xlabel("Objetosc $V, dm^3$")
+ylabel("Cisnienie $p, Mpa$")
+xlim([0, 1]);
+
+hfig = [hfig1];
 picturewidth = 20;
 hw_ratio = 0.65;
 set(findall(hfig, '-property', 'FontSize'),'FontSize', 15);
@@ -139,7 +173,3 @@ set(findall(hfig,'-property', 'Box'),'Box', 'off');
 set(findall(hfig, '-property', 'Interpreter'), 'Interpreter','latex');
 set(findall(hfig, '-property', 'TickLabelInterpreter'), 'TickLabelInterpreter','latex');
 set(hfig,'Units', 'centimeters', 'Position', [3 3 picturewidth hw_ratio*picturewidth]);
-
-pos = get(hfig1,'Position');
-set(hfig1, 'PaperPositionMode', 'Auto', 'PaperUnits', 'centimeters', 'PaperSize', [pos(3), pos(4)]);
-print(hfig1,'png_figure','-dpng', '-vector');

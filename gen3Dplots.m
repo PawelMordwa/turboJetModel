@@ -1,0 +1,106 @@
+%% --- GENERATOR WYKRESÓW 3D (Surface Plots) ---
+% Wymaga wcześniejszego uruchomienia generate_maps.m lub posiadania zmiennych w Workspace
+% Jeśli nie masz zmiennych, odkomentuj sekcję generowania danych w poprzednim skrypcie.
+
+% Upewnij się, że mamy dane
+if ~exist('C_PR_map', 'var')
+    error('Brak danych map w Workspace! Uruchom najpierw skrypt generate_maps.m');
+end
+
+% Ustawienia wspólne
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
+colormap_name = 'parula'; % Profesjonalna paleta kolorów
+
+%% 1. SPRĘŻARKA: Powierzchnia Sprężu (Pressure Ratio)
+hfig5 = figure('Color', 'w', 'Position', [100, 100, 800, 600]);
+[X_C, Y_C] = meshgrid(C_Beta_vec, C_Nc_vec); % Siatka: Beta vs Obroty
+
+s1 = surf(X_C, Y_C, C_PR_map);
+s1.EdgeColor = 'interp'; % Gładkie krawędzie
+s1.FaceAlpha = 0.9;      % Lekka przezroczystość
+colormap(colormap_name);
+colorbar;
+
+xlabel('Beta Parameter ($\beta$)');
+ylabel('Corrected Speed ($n_{corr}$)');
+zlabel('Pressure Ratio ($\pi_{c}$)');
+grid on; axis tight; view(45, 30); % Ustawienie kamery
+
+%% 2. SPRĘŻARKA: Powierzchnia Sprawności (Efficiency)
+hfig6 = figure('Color', 'w', 'Position', [150, 150, 800, 600]);
+
+s2 = surf(X_C, Y_C, C_Eff_map);
+s2.EdgeColor = 'interp';
+s2.FaceAlpha = 0.9;
+colormap(colormap_name);
+c = colorbar;
+c.Label.String = 'Efficiency';
+c.Label.Interpreter = 'latex';
+
+xlabel('Beta Parameter ($\beta$)');
+ylabel('Corrected Speed ($n_{corr}$)');
+zlabel('Isentropic Efficiency ($\eta_{c}$)');
+zlim([0.5 1.0]); % Skupienie na istotnym zakresie
+grid on; axis tight; view(45, 30);
+
+%% 3. SPRĘŻARKA: Powierzchnia Przepływu (Corrected Flow)
+hfig7 = figure('Color', 'w', 'Position', [200, 200, 800, 600]);
+
+s3 = surf(X_C, Y_C, C_Wc_map);
+s3.EdgeColor = 'k'; % Czarne linie siatki dla lepszej czytelności kształtu
+s3.EdgeAlpha = 0.3;
+s3.FaceColor = 'interp';
+colormap(jet); % 'jet' dobrze pokazuje różnice w przepływie
+colorbar;
+
+xlabel('Beta Parameter ($\beta$)');
+ylabel('Corrected Speed ($n_{corr}$)');
+zlabel('Corrected Mass Flow ($$\dot{m}_{corr}$)');
+grid on; axis tight; view(45, 30);
+
+%% 4. TURBINA: Powierzchnia Sprawności (Turbine Efficiency)
+hfig8 = figure('Color', 'w', 'Position', [250, 250, 800, 600]);
+[X_T, Y_T] = meshgrid(T_PR_vec, T_Nc_vec); % Siatka: PR vs Obroty
+
+s4 = surf(X_T, Y_T, T_Eff_map);
+s4.EdgeColor = 'interp';
+s4.FaceAlpha = 0.9;
+colormap(colormap_name);
+colorbar;
+
+xlabel('Turbine Pressure Ratio ($\pi_{t}$)');
+ylabel('Corrected Speed ($n_{corr}$)');
+zlabel('Isentropic Efficiency ($\eta_{t}$)');
+grid on; axis tight; view(-45, 30);
+
+%% 5. TURBINA: Powierzchnia Przepływu (Turbine Flow - Choking)
+hfig9 = figure('Color', 'w', 'Position', [300, 300, 800, 600]);
+
+s5 = surf(X_T, Y_T, T_Wc_map);
+s5.FaceColor = 'interp';
+s5.EdgeColor = 'interp';
+s5.FaceAlpha = 0.9;
+lighting phong; % Oświetlenie dla uwypuklenia zagięcia (choking)
+camlight left;
+colormap(colormap_name);
+colorbar;
+
+xlabel('Turbine Pressure Ratio ($\pi_{t}$)');
+ylabel('Corrected Speed ($n_{corr}$)');
+zlabel("Corrected Gas Flow ($\dot{m}'_{corr}$)");
+grid on; axis tight; view(-45, 30);
+
+hfig = [hfig5, hfig6, hfig7, hfig8, hfig9];
+picturewidth = 20;
+hw_ratio = 0.65;
+set(findall(hfig, '-property', 'FontSize'),'FontSize', 15);
+set(findall(hfig,'-property', 'Box'),'Box', 'off');
+set(findall(hfig, '-property', 'Interpreter'), 'Interpreter','latex');
+set(findall(hfig, '-property', 'TickLabelInterpreter'), 'TickLabelInterpreter','latex');
+set(hfig,'Units', 'centimeters', 'Position', [3 3 picturewidth hw_ratio*picturewidth]);
+
+pos = get(hfig9,'Position');
+set(hfig9, 'PaperPositionMode', 'Auto', 'PaperUnits', 'centimeters', 'PaperSize', [pos(3), pos(4)]);
+print(hfig9,'figTurbineFlow3D','-dpng', '-vector');
